@@ -1,5 +1,6 @@
-
 #!/bin/bash
+
+set -x
 
 if [ -z "${DRAC_HOST}" ]; then
   echo -n 'Host: '
@@ -16,6 +17,27 @@ if [ -z "${DRAC_PASSWORD}" ]; then
   read -s DRAC_PASSWORD
 fi
 
+case "$(uname -s)" in
+    Linux*)
+        machine=Linux
+        if [ `getconf LONG_BIT` = "64" ]
+        then
+            LIBRARY_PATH=./lib/linux64
+        else
+            LIBRARY_PATH=./lib/linux32
+        fi
+        ;;
+    Darwin*)
+        machine=Mac
+        LIBRARY_PATH=./lib/osx
+        ;;
+    *)
+        echo "Unsupported OS"
+        exit 1
+esac
+
+echo ${machine}
+
 echo
 
 if [ ! -f ./avctKVM.jar ]; then
@@ -23,7 +45,7 @@ if [ ! -f ./avctKVM.jar ]; then
 fi
 
 java -cp avctKVM.jar \
-   -Djava.library.path=./lib \
+   -Djava.library.path=${LIBRARY_PATH} \
    com.avocent.idrac.kvm.Main \
    ip=${DRAC_HOST} \
    kmport=5900 \
